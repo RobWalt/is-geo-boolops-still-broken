@@ -1,4 +1,4 @@
-use bevy::input::common_conditions::input_pressed;
+use bevy::input::common_conditions::{input_just_pressed, input_pressed};
 use bevy::prelude::*;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_mod_picking::prelude::*;
@@ -7,13 +7,17 @@ use geo::CheckedBooleanOps;
 use rand::seq::IteratorRandom;
 use rand::thread_rng;
 
+pub mod baby_shark;
+
 // put your own implementation of a safe intersection algorithm here
 fn intersection(p1: &geo::Polygon<f32>, p2: &geo::Polygon<f32>) -> geo::MultiPolygon<f32> {
+    //crate::baby_shark::intersection(p1, p2)
     p1.checked_intersection(p2).unwrap()
 }
 
 // put your own implementation of a safe difference algorithm here
 fn difference(p1: &geo::Polygon<f32>, p2: &geo::Polygon<f32>) -> geo::MultiPolygon<f32> {
+    //crate::baby_shark::difference(p1, p2)
     p1.checked_difference(p2).unwrap()
 }
 
@@ -28,7 +32,14 @@ fn main() {
         .add_plugins(WorldInspectorPlugin::default())
         .add_plugins(ShapePlugin)
         .add_systems(Startup, (setup_camera, setup_shapes))
-        .add_systems(Update, (update_shape, visualize_intersection))
+        .add_systems(
+            Update,
+            (
+                update_shape,
+                visualize_intersection,
+                visualize_triangulation.run_if(input_just_pressed(KeyCode::Return)),
+            ),
+        )
         .add_systems(Update, moving.run_if(input_pressed(KeyCode::Space)))
         //.add_systems(Startup, setup_plugin)
         //.add_systems(Update, spin)
@@ -52,6 +63,71 @@ pub struct IntersectionMarker;
 
 #[derive(Debug, Clone, Component, Default, Reflect)]
 pub struct Moving;
+
+#[derive(Debug, Clone, Component, Default, Reflect)]
+pub struct Triangle;
+
+fn visualize_triangulation(
+    mut commands: Commands,
+    q_changed_shape: Query<(), (Changed<Path>, With<ShapeMarker>)>,
+    q_shapes: Query<&Children, With<ShapeMarker>>,
+    q_vertices: Query<&GlobalTransform, With<VertexMarker>>,
+    q_previous_triangulation: Query<Entity, With<Triangle>>,
+) {
+    if q_changed_shape.is_empty() {
+        return;
+    }
+
+    for old in q_previous_triangulation.iter() {
+        commands.entity(old).despawn_recursive();
+    }
+
+    let shapes = q_shapes
+        .iter()
+        .map(|shape| {
+            shape
+                .iter()
+                .filter_map(|&child| q_vertices.get(child).ok())
+                .map(|transform| transform.translation().truncate())
+                .collect::<Vec<_>>()
+        })
+        .map(|shape| {
+            geo::Polygon::new(
+                geo::LineString::new(
+                    shape
+                        .iter()
+                        .map(|v| geo::Coord { x: v.x, y: v.y })
+                        .collect::<Vec<_>>(),
+                ),
+                vec![],
+            )
+        })
+        .collect::<Vec<_>>();
+
+    let triangles = crate::baby_shark::general_intersection_triangulation(&shapes);
+
+    for poly in triangles.iter().map(|tri| tri.to_polygon()) {
+        let shape = poly
+            .exterior()
+            .0
+            .iter()
+            .map(|c| Vec2::from(c.x_y()))
+            .collect::<Vec<_>>();
+        commands.spawn((
+            ShapeBundle {
+                path: GeometryBuilder::build_as(&shapes::Polygon {
+                    points: shape,
+                    closed: true,
+                }),
+                transform: Transform::from_translation(Vec2::ZERO.extend(0.5)),
+                ..default()
+            },
+            Fill::color(Color::GREEN),
+            Stroke::new(Color::BLACK, 1.0),
+            Triangle,
+        ));
+    }
+}
 
 fn visualize_intersection(
     mut commands: Commands,

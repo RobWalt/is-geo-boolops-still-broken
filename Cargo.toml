@@ -14,6 +14,9 @@ bevy_prototype_lyon = "0.9"
 geo = "0.26"
 rand = "0.8"
 glam = {version = "0.24", features = ["rand"]}
+baby_shark = { path = "/home/aviac/work/repos/baby_shark" }
+nalgebra = "0.31"
+polygon-stitching = { path = "/home/aviac/work/repos/polygon-stitching" }
 
 [patch.crates-io]
 geo = { git = "https://github.com/RobWalt/geo.git", branch = "experiment/safe-boolops" }
