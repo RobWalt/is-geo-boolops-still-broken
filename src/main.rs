@@ -1,17 +1,18 @@
 use bevy::input::common_conditions::input_pressed;
 use bevy::prelude::*;
-use bevy_eventlistener::prelude::*;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_mod_picking::prelude::*;
 use bevy_prototype_lyon::prelude::*;
-use geo::{BooleanOps, CheckedBooleanOps};
+use geo::CheckedBooleanOps;
 use rand::seq::IteratorRandom;
 use rand::thread_rng;
 
+// put your own implementation of a safe intersection algorithm here
 fn intersection(p1: &geo::Polygon<f32>, p2: &geo::Polygon<f32>) -> geo::MultiPolygon<f32> {
     p1.checked_intersection(p2).unwrap()
 }
 
+// put your own implementation of a safe difference algorithm here
 fn difference(p1: &geo::Polygon<f32>, p2: &geo::Polygon<f32>) -> geo::MultiPolygon<f32> {
     p1.checked_difference(p2).unwrap()
 }

@@ -1,0 +1,1 @@
+Drag and drop the vertices of the shapes to adjust them. Press spacebar to wiggle the vertices. If you do one and/or the other long enough the program will probably crash. The goal is to not make that happen for an extended period of time. That'll be no proof of it working but it should suffice a lot of use cases.

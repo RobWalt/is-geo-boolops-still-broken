@@ -1830,21 +1830,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "finite-grid"
-version = "0.1.0"
-dependencies = [
- "bevy",
- "bevy-inspector-egui",
- "bevy_egui",
- "bevy_eventlistener",
- "bevy_mod_picking",
- "bevy_prototype_lyon",
- "geo",
- "glam",
- "rand",
-]
-
-[[package]]
 name = "fixedbitset"
 version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2352,6 +2337,20 @@ checksum = "9b2d4429acc1deff0fbdece0325b4997bdb02b2c245ab7023fd5deca0f6348de"
 dependencies = [
  "core-foundation-sys 0.8.4",
  "mach2",
+]
+
+[[package]]
+name = "is-geo-boolops-still-broken"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "bevy-inspector-egui",
+ "bevy_egui",
+ "bevy_mod_picking",
+ "bevy_prototype_lyon",
+ "geo",
+ "glam",
+ "rand",
 ]
 
 [[package]]
