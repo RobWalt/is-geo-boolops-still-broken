@@ -1,24 +1,26 @@
-use bevy::input::common_conditions::{input_just_pressed, input_pressed};
+use bevy::input::common_conditions::input_toggle_active;
 use bevy::prelude::*;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_mod_picking::prelude::*;
 use bevy_prototype_lyon::prelude::*;
-use geo::CheckedBooleanOps;
 use rand::seq::IteratorRandom;
 use rand::thread_rng;
 
 pub mod baby_shark;
+pub mod spade;
 
 // put your own implementation of a safe intersection algorithm here
 fn intersection(p1: &geo::Polygon<f32>, p2: &geo::Polygon<f32>) -> geo::MultiPolygon<f32> {
+    //p1.checked_intersection(p2).unwrap()
     //crate::baby_shark::intersection(p1, p2)
-    p1.checked_intersection(p2).unwrap()
+    crate::spade::intersection(p1, p2)
 }
 
 // put your own implementation of a safe difference algorithm here
 fn difference(p1: &geo::Polygon<f32>, p2: &geo::Polygon<f32>) -> geo::MultiPolygon<f32> {
+    //p1.checked_difference(p2).unwrap()
     //crate::baby_shark::difference(p1, p2)
-    p1.checked_difference(p2).unwrap()
+    crate::spade::difference(p1, p2)
 }
 
 fn main() {
@@ -37,10 +39,13 @@ fn main() {
             (
                 update_shape,
                 visualize_intersection,
-                visualize_triangulation.run_if(input_just_pressed(KeyCode::Return)),
+                visualize_triangulation.run_if(input_toggle_active(false, KeyCode::Return)),
             ),
         )
-        .add_systems(Update, moving.run_if(input_pressed(KeyCode::Space)))
+        .add_systems(
+            Update,
+            moving.run_if(input_toggle_active(false, KeyCode::Space)),
+        )
         //.add_systems(Startup, setup_plugin)
         //.add_systems(Update, spin)
         .register_type::<ShapeVertexChildren>()
@@ -104,7 +109,7 @@ fn visualize_triangulation(
         })
         .collect::<Vec<_>>();
 
-    let triangles = crate::baby_shark::general_intersection_triangulation(&shapes);
+    let triangles = crate::spade::general_intersection_triangulation(&shapes);
 
     for poly in triangles.iter().map(|tri| tri.to_polygon()) {
         let shape = poly
@@ -166,13 +171,14 @@ fn visualize_intersection(
         })
         .collect::<Vec<_>>();
 
+    let mut loop_count = 10000;
     let mut intersections = vec![];
     while let Some(([idx0, idx1], intersection)) =
         shapes.iter().enumerate().find_map(|(idx0, shape0)| {
             shapes
                 .iter()
                 .enumerate()
-                .filter(|&(idx, _)| idx != idx0)
+                .filter(|&(idx, shape1)| idx != idx0 && shape0 != shape1)
                 .find_map(|(idx1, shape1)| {
                     let intersection = intersection(shape0, shape1);
                     (!intersection.0.is_empty()).then(|| {
@@ -183,25 +189,29 @@ fn visualize_intersection(
                 })
         })
     {
+        loop_count -= 1;
+        if loop_count == 0 {
+            info!("loop trap shapes");
+            return;
+        }
         // order matters! removing the bigger one first to prevent index invalidation
         let shape1 = shapes.remove(idx1);
         let shape0 = shapes.remove(idx0);
 
+        let d1 = difference(&shape0, &shape1);
+        let d2 = difference(&shape1, &shape0);
+
         intersections.extend(intersection);
-        shapes.extend(difference(&shape0, &shape1));
-        shapes.extend(difference(&shape1, &shape0));
+        shapes.extend(d1);
+        shapes.extend(d2);
     }
 
     let differences = shapes;
 
     for (poly, color) in intersections
         .iter()
-        .zip(std::iter::repeat(Color::BLACK.with_a(0.8)))
-        .chain(
-            differences
-                .iter()
-                .zip(std::iter::repeat(Color::WHITE.with_a(0.8))),
-        )
+        .zip(std::iter::repeat(Color::BLACK))
+        .chain(differences.iter().zip(std::iter::repeat(Color::WHITE)))
     {
         let shape = poly
             .exterior()
@@ -215,7 +225,7 @@ fn visualize_intersection(
                     points: shape,
                     closed: true,
                 }),
-                transform: Transform::from_translation(Vec2::ZERO.extend(0.1)),
+                transform: Transform::from_translation(Vec2::ZERO.extend(0.3)),
                 ..default()
             },
             Fill::color(color),
@@ -273,8 +283,6 @@ fn setup_shapes(mut commands: Commands) {
         .map(|v| v * 100.0)
         .into_iter()
         .for_each(|offset| {
-            let color = Color::rgb(offset.x * 0.005 + 0.5, offset.y * 0.005 + 0.5, 0.0).with_a(0.5);
-            info!("{offset:?}->{color:?}");
             commands
                 .spawn((
                     ShapeBundle {
@@ -285,7 +293,7 @@ fn setup_shapes(mut commands: Commands) {
                         transform: Transform::from_translation(offset.extend(0.0)),
                         ..default()
                     },
-                    Fill::color(color),
+                    Fill::color(Color::ORANGE),
                     ShapeMarker,
                 ))
                 .with_children(|children| {

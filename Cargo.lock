@@ -1957,8 +1957,18 @@ dependencies = [
  "geographiclib-rs",
  "log",
  "num-traits",
- "robust",
+ "robust 1.1.0",
  "rstar",
+]
+
+[[package]]
+name = "geo-svg"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7d273cfe8a1b77d621a8c7be137ee04b384e098d569ce0d96041cb64eb0c90ab"
+dependencies = [
+ "geo-types",
+ "num-traits",
 ]
 
 [[package]]
@@ -2376,10 +2386,12 @@ dependencies = [
  "bevy_mod_picking",
  "bevy_prototype_lyon",
  "geo",
+ "geo-svg",
  "glam",
  "nalgebra",
  "polygon-stitching",
  "rand",
+ "spade",
 ]
 
 [[package]]
@@ -3142,6 +3154,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dd8b5dd2ae5ed71462c540258bedcb51965123ad7e7ccf4b9a8cafaa4a63576d"
 
 [[package]]
+name = "optional"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "978aa494585d3ca4ad74929863093e87cac9790d81fe7aba2b3dc2890643a0fc"
+
+[[package]]
 name = "orbclient"
 version = "0.3.46"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3466,6 +3484,12 @@ checksum = "216080ab382b992234dda86873c18d4c48358f5cfcb70fd693d7f6f2131b628b"
 
 [[package]]
 name = "robust"
+version = "0.2.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e5864e7ef1a6b7bcf1d6ca3f655e65e724ed3b52546a0d0a663c991522f552ea"
+
+[[package]]
+name = "robust"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cbf4a6aa5f6d6888f39e980649f3ad6b666acdce1d78e95b8a2cb076e687ae30"
@@ -3714,6 +3738,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "74212e6bbe9a4352329b2f68ba3130c15a3f26fe88ff22dbdc6cdd58fa85e99c"
 dependencies = [
  "serde",
+]
+
+[[package]]
+name = "spade"
+version = "2.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "88e65803986868d2372c582007c39ba89936a36ea5f236bf7a7728dc258f04f9"
+dependencies = [
+ "num-traits",
+ "optional",
+ "robust 0.2.3",
+ "smallvec",
 ]
 
 [[package]]
