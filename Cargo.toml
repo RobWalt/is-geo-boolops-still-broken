@@ -1,0 +1,20 @@
+[package]
+name = "finite-grid"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+bevy = { version = "0.11", features = ["wayland"] }
+bevy-inspector-egui = "0.19"
+bevy_egui = "0.21"
+bevy_eventlistener = "0.3"
+bevy_mod_picking = { git = "https://github.com/aevyrie/bevy_mod_picking" }
+bevy_prototype_lyon = "0.9"
+geo = "0.26"
+rand = "0.8"
+glam = {version = "0.24", features = ["rand"]}
+
+[patch.crates-io]
+geo = { git = "https://github.com/RobWalt/geo.git", branch = "experiment/safe-boolops" }
