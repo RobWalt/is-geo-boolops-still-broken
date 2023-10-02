@@ -88,7 +88,7 @@ pub fn triangulate_polys(
     let original_lines = lines.clone();
     let mut loop_check = || {
         loop_count -= 1;
-        (loop_count == 0)
+        (loop_count != 0)
             .then_some(())
             .ok_or_else(|| SpadeBoolopsError::LoopTrap(original_lines.clone()))
     };
@@ -183,7 +183,7 @@ fn iter_line_pairs(
         lines
             .iter()
             .enumerate()
-            .filter(move |(idx1, _)| *idx1 != idx0)
+            .filter(move |(idx1, line1)| *idx1 != idx0 && line0 != *line1)
             .map(move |(idx1, line1)| ((idx0, line0), (idx1, line1)))
     })
 }

@@ -1,0 +1,38 @@
+[env]
+CARGO_TARGET_DIR = {value = "target", condition = {env_not_set = ["CARGO_TARGET_DIR"]}}
+CARGO_WASM_PATH = "${CARGO_TARGET_DIR}/wasm32-unknown-unknown/release/is-geo-boolops-still-broken.wasm"
+
+# Build for the wasm32-unknown-unknown target and store in ${CARGO_WASM_PATH}
+[tasks.cargo-build-wasm]
+command = "cargo"
+args = ["build", "--target", "wasm32-unknown-unknown", "--profile=release"]
+
+# remove old release files
+[tasks.clean-old-release]
+command = "rm"
+args = ["-rf", "./wasm/release"]
+
+# create directory for new release files
+[tasks.create-release-dir]
+command = "mkdir"
+args = ["./wasm/release"]
+dependencies = ["clean-old-release"]
+
+# Emit the JavaScript bindings and processed .wasm binary
+[tasks.wasm-bindgen-bundle]
+script = "wasm-bindgen --out-dir ./wasm/release --out-name ${CARGO_MAKE_CRATE_NAME} --target web --no-typescript ${CARGO_WASM_PATH}"
+dependencies = ["cargo-build-wasm", "create-release-dir"]
+
+# copy over index.html which has the entry point for the wasm project
+[tasks.copy-index-html]
+command = "cp"
+args = ["./wasm/index.html", "./wasm/release"]
+
+# copy over the assets
+[tasks.copy-assets]
+script = "cp -rf assets ./wasm/release"
+
+# zip everything as flat as possible (don't zip it inside of a folder but rather directly)
+[tasks.create-release-zip]
+script = "cd ./wasm/release && zip -r game.zip ./*"
+dependencies = ["wasm-bindgen-bundle", "copy-assets", "copy-index-html"]

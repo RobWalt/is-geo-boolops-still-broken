@@ -30,22 +30,24 @@ fn difference(
 }
 
 fn main() {
-    App::new()
-        .add_plugins((
-            DefaultPlugins.set(low_latency_window_plugin()),
-            DefaultPickingPlugins
-                .build()
-                .disable::<DebugPickingPlugin>(),
-        ))
-        .add_plugins(WorldInspectorPlugin::default())
-        .add_plugins(ShapePlugin)
+    let mut app = App::new();
+    app.add_plugins((
+        DefaultPlugins.set(low_latency_window_plugin()),
+        DefaultPickingPlugins
+            .build()
+            .disable::<DebugPickingPlugin>(),
+    ));
+    #[cfg(debug)]
+    app.add_plugins(WorldInspectorPlugin::default());
+    app.add_plugins(ShapePlugin)
         .add_systems(Startup, (setup_camera, setup_shapes))
         .add_systems(
             Update,
             (
                 update_shape,
                 visualize_intersection,
-                //visualize_triangulation.run_if(input_toggle_active(false, KeyCode::Return)),
+                visualize_triangulation.run_if(input_toggle_active(false, KeyCode::Return)),
+                delete_triangulation.run_if(input_toggle_active(true, KeyCode::Return)),
             ),
         )
         .add_systems(
@@ -77,6 +79,16 @@ pub struct Moving;
 
 #[derive(Debug, Clone, Component, Default, Reflect)]
 pub struct Triangle;
+
+fn delete_triangulation(
+    mut commands: Commands,
+
+    q_previous_triangulation: Query<Entity, With<Triangle>>,
+) {
+    q_previous_triangulation.iter().for_each(|tri| {
+        commands.entity(tri).despawn_recursive();
+    });
+}
 
 fn visualize_triangulation(
     mut commands: Commands,
@@ -206,7 +218,6 @@ fn visualize_intersection(
             Err(e) => panic!("{e:?}"),
         };
         loop_count -= 1;
-        info!("looping shapes");
         if loop_count == 0 {
             info!("loop trap shapes");
             return;
@@ -231,10 +242,14 @@ fn visualize_intersection(
 
     let differences = shapes;
 
-    for (poly, color) in intersections
+    for (poly, (depth, color)) in intersections
         .iter()
-        .zip(std::iter::repeat(Color::BLACK))
-        .chain(differences.iter().zip(std::iter::repeat(Color::WHITE)))
+        .zip(std::iter::repeat((0.4, Color::BLACK)))
+        .chain(
+            differences
+                .iter()
+                .zip(std::iter::repeat((0.3, Color::WHITE))),
+        )
     {
         let shape = poly
             .exterior()
@@ -248,7 +263,7 @@ fn visualize_intersection(
                     points: shape,
                     closed: true,
                 }),
-                transform: Transform::from_translation(Vec2::ZERO.extend(0.3)),
+                transform: Transform::from_translation(Vec2::ZERO.extend(depth)),
                 ..default()
             },
             Fill::color(color),
@@ -294,6 +309,20 @@ fn update_shape(
 
 fn setup_camera(mut commands: Commands) {
     commands.spawn(Camera2dBundle::default());
+    commands.spawn((TextBundle::from_section(
+        "
+        Press SPACEBAR to toggle wiggle!\n
+        Press ENTER to toggle triangulation vis!\n
+        Drag and Drop points
+        ",
+        TextStyle::default(),
+    )
+    .with_style(Style {
+        position_type: PositionType::Absolute,
+        top: Val::Px(50.0),
+        right: Val::Percent(40.0),
+        ..default()
+    }),));
 }
 
 fn setup_shapes(mut commands: Commands) {
