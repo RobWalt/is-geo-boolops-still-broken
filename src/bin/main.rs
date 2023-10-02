@@ -1,13 +1,13 @@
 use bevy::input::common_conditions::input_toggle_active;
 use bevy::prelude::*;
-use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_mod_picking::prelude::*;
 use bevy_prototype_lyon::prelude::*;
+use geo::*;
 use rand::seq::IteratorRandom;
 use rand::thread_rng;
 
-pub mod baby_shark;
-pub mod spade;
+//use is_geo_boolops_still_broken::baby_shark;
+use is_geo_boolops_still_broken::spade as MySpade;
 
 // put your own implementation of a safe intersection algorithm here
 fn intersection(
@@ -15,8 +15,8 @@ fn intersection(
     p2: &geo::Polygon<f32>,
 ) -> anyhow::Result<geo::MultiPolygon<f32>> {
     //Ok(p1.checked_intersection(p2).unwrap())
-    //Ok(crate::baby_shark::intersection(p1, p2))
-    crate::spade::intersection(p1, p2).map_err(anyhow::Error::from)
+    //Ok(baby_shark::intersection(p1, p2))
+    MySpade::intersection(p1, p2).map_err(anyhow::Error::from)
 }
 
 // put your own implementation of a safe difference algorithm here
@@ -25,8 +25,8 @@ fn difference(
     p2: &geo::Polygon<f32>,
 ) -> anyhow::Result<geo::MultiPolygon<f32>> {
     //p1.checked_difference(p2).unwrap()
-    //crate::baby_shark::difference(p1, p2)
-    crate::spade::difference(p1, p2).map_err(anyhow::Error::from)
+    //baby_shark::difference(p1, p2)
+    MySpade::difference(p1, p2).map_err(anyhow::Error::from)
 }
 
 fn main() {
@@ -38,7 +38,10 @@ fn main() {
             .disable::<DebugPickingPlugin>(),
     ));
     #[cfg(debug)]
-    app.add_plugins(WorldInspectorPlugin::default());
+    {
+        use bevy_inspector_egui::quick::WorldInspectorPlugin;
+        app.add_plugins(WorldInspectorPlugin::default());
+    }
     app.add_plugins(ShapePlugin)
         .add_systems(Startup, (setup_camera, setup_shapes))
         .add_systems(
@@ -127,7 +130,17 @@ fn visualize_triangulation(
         })
         .collect::<Vec<_>>();
 
-    let Ok(triangles) = crate::spade::general_intersection_triangulation(&shapes) else {
+    fn general_intersection_triangulation(
+        ps: &[geo::Polygon<f32>],
+    ) -> Result<Vec<geo::Triangle<f32>>, MySpade::SpadeBoolopsError> {
+        let triangles = MySpade::triangulate_polys(ps)?;
+        Ok(triangles
+            .into_iter()
+            .filter(|tri| ps.iter().filter(|p| p.contains(&tri.centroid())).count() >= 2)
+            .collect::<Vec<_>>())
+    }
+
+    let Ok(triangles) = general_intersection_triangulation(&shapes) else {
         return;
     };
 
