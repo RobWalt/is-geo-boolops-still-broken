@@ -10,17 +10,23 @@ pub mod baby_shark;
 pub mod spade;
 
 // put your own implementation of a safe intersection algorithm here
-fn intersection(p1: &geo::Polygon<f32>, p2: &geo::Polygon<f32>) -> geo::MultiPolygon<f32> {
-    //p1.checked_intersection(p2).unwrap()
-    //crate::baby_shark::intersection(p1, p2)
-    crate::spade::intersection(p1, p2)
+fn intersection(
+    p1: &geo::Polygon<f32>,
+    p2: &geo::Polygon<f32>,
+) -> anyhow::Result<geo::MultiPolygon<f32>> {
+    //Ok(p1.checked_intersection(p2).unwrap())
+    //Ok(crate::baby_shark::intersection(p1, p2))
+    crate::spade::intersection(p1, p2).map_err(anyhow::Error::from)
 }
 
 // put your own implementation of a safe difference algorithm here
-fn difference(p1: &geo::Polygon<f32>, p2: &geo::Polygon<f32>) -> geo::MultiPolygon<f32> {
+fn difference(
+    p1: &geo::Polygon<f32>,
+    p2: &geo::Polygon<f32>,
+) -> anyhow::Result<geo::MultiPolygon<f32>> {
     //p1.checked_difference(p2).unwrap()
     //crate::baby_shark::difference(p1, p2)
-    crate::spade::difference(p1, p2)
+    crate::spade::difference(p1, p2).map_err(anyhow::Error::from)
 }
 
 fn main() {
@@ -39,7 +45,7 @@ fn main() {
             (
                 update_shape,
                 visualize_intersection,
-                visualize_triangulation.run_if(input_toggle_active(false, KeyCode::Return)),
+                //visualize_triangulation.run_if(input_toggle_active(false, KeyCode::Return)),
             ),
         )
         .add_systems(
@@ -109,7 +115,9 @@ fn visualize_triangulation(
         })
         .collect::<Vec<_>>();
 
-    let triangles = crate::spade::general_intersection_triangulation(&shapes);
+    let Ok(triangles) = crate::spade::general_intersection_triangulation(&shapes) else {
+        return;
+    };
 
     for poly in triangles.iter().map(|tri| tri.to_polygon()) {
         let shape = poly
@@ -171,25 +179,34 @@ fn visualize_intersection(
         })
         .collect::<Vec<_>>();
 
-    let mut loop_count = 10000;
+    let mut loop_count = 1000;
     let mut intersections = vec![];
-    while let Some(([idx0, idx1], intersection)) =
-        shapes.iter().enumerate().find_map(|(idx0, shape0)| {
+    while let Some(res) = {
+        let mut iter = shapes.iter().enumerate().flat_map(|(idx0, shape0)| {
             shapes
                 .iter()
                 .enumerate()
-                .filter(|&(idx, shape1)| idx != idx0 && shape0 != shape1)
-                .find_map(|(idx1, shape1)| {
-                    let intersection = intersection(shape0, shape1);
-                    (!intersection.0.is_empty()).then(|| {
-                        let mut idxs = [idx0, idx1];
-                        idxs.sort();
-                        (idxs, intersection)
-                    })
-                })
+                .filter(move |&(idx, shape1)| idx != idx0 && shape0 != shape1)
+                .map(move |(idx1, shape1)| ((idx0, shape0), (idx1, shape1)))
+        });
+        iter.find_map(|((idx0, shape0), (idx1, shape1))| {
+            let intersection = intersection(shape0, shape1);
+            match intersection {
+                Ok(intersection) => (!intersection.0.is_empty()).then(|| {
+                    let mut idxs = [idx0, idx1];
+                    idxs.sort();
+                    Ok((idxs, intersection))
+                }),
+                Err(e) => Some(Err(e)),
+            }
         })
-    {
+    } {
+        let ([idx0, idx1], intersection) = match res {
+            Ok(ok) => ok,
+            Err(e) => panic!("{e:?}"),
+        };
         loop_count -= 1;
+        info!("looping shapes");
         if loop_count == 0 {
             info!("loop trap shapes");
             return;
@@ -198,8 +215,14 @@ fn visualize_intersection(
         let shape1 = shapes.remove(idx1);
         let shape0 = shapes.remove(idx0);
 
-        let d1 = difference(&shape0, &shape1);
-        let d2 = difference(&shape1, &shape0);
+        let d1 = match difference(&shape0, &shape1) {
+            Ok(ok) => ok,
+            Err(e) => panic!("{e:?}"),
+        };
+        let d2 = match difference(&shape1, &shape0) {
+            Ok(ok) => ok,
+            Err(e) => panic!("{e:?}"),
+        };
 
         intersections.extend(intersection);
         shapes.extend(d1);
@@ -318,7 +341,7 @@ fn setup_shapes(mut commands: Commands) {
                                     |drag, transform| {
                                         let new_translation = transform.translation
                                             + (drag.delta * Vec2::new(1.0, -1.0)).extend(0.0);
-                                        let new_translation = new_translation.trunc();
+                                        let new_translation = new_translation;
                                         transform.translation = new_translation;
                                     },
                                 ),

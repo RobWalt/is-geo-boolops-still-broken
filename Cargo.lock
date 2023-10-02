@@ -1959,6 +1959,7 @@ dependencies = [
  "num-traits",
  "robust 1.1.0",
  "rstar",
+ "serde",
 ]
 
 [[package]]
@@ -2379,6 +2380,7 @@ dependencies = [
 name = "is-geo-boolops-still-broken"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "baby_shark",
  "bevy",
  "bevy-inspector-egui",
@@ -2391,7 +2393,10 @@ dependencies = [
  "nalgebra",
  "polygon-stitching",
  "rand",
+ "serde_json",
  "spade",
+ "thiserror",
+ "tracing-subscriber",
 ]
 
 [[package]]
