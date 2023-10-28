@@ -6,16 +6,13 @@ use geo::*;
 use rand::seq::IteratorRandom;
 use rand::thread_rng;
 
-//use is_geo_boolops_still_broken::baby_shark;
-use is_geo_boolops_still_broken::spade as MySpade;
+use geo::SpadeBoolops as MySpade;
 
 // put your own implementation of a safe intersection algorithm here
 fn intersection(
     p1: &geo::Polygon<f32>,
     p2: &geo::Polygon<f32>,
 ) -> anyhow::Result<geo::MultiPolygon<f32>> {
-    //Ok(p1.checked_intersection(p2).unwrap())
-    //Ok(baby_shark::intersection(p1, p2))
     MySpade::intersection(p1, p2).map_err(anyhow::Error::from)
 }
 
@@ -24,8 +21,6 @@ fn difference(
     p1: &geo::Polygon<f32>,
     p2: &geo::Polygon<f32>,
 ) -> anyhow::Result<geo::MultiPolygon<f32>> {
-    //p1.checked_difference(p2).unwrap()
-    //baby_shark::difference(p1, p2)
     MySpade::difference(p1, p2).map_err(anyhow::Error::from)
 }
 
@@ -132,8 +127,8 @@ fn visualize_triangulation(
 
     fn general_intersection_triangulation(
         ps: &[geo::Polygon<f32>],
-    ) -> Result<Vec<geo::Triangle<f32>>, MySpade::SpadeBoolopsError> {
-        let triangles = MySpade::triangulate_polys(ps)?;
+    ) -> Result<Vec<geo::Triangle<f32>>, ()> {
+        let triangles = ps.constrained_triangulation().map_err(drop)?;
         Ok(triangles
             .into_iter()
             .filter(|tri| ps.iter().filter(|p| p.contains(&tri.centroid())).count() >= 2)

@@ -14,9 +14,7 @@ bevy_prototype_lyon = "0.9"
 geo = { version = "0.26", features = ["serde"] }
 rand = "0.8"
 glam = {version = "0.24", features = ["rand"]}
-baby_shark = { path = "/home/aviac/work/repos/baby_shark" }
 nalgebra = "0.31"
-polygon-stitching = { path = "/home/aviac/work/repos/polygon-stitching" }
 spade = "2.2"
 geo-svg = "0.5"
 serde_json = "1.0"
@@ -25,4 +23,4 @@ anyhow = "1.0"
 thiserror = "1.0"
 
 [patch.crates-io]
-geo = { git = "https://github.com/RobWalt/geo.git", branch = "experiment/safe-boolops" }
+geo = { git = "https://github.com/RobWalt/geo.git", branch = "feat/spade-boolops" }
