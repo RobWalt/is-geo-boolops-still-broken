@@ -319,6 +319,7 @@ fn setup_camera(mut commands: Commands) {
     commands.spawn(Camera2dBundle::default());
     commands.spawn((TextBundle::from_section(
         "
+        UPDATED!
         Press SPACEBAR to toggle wiggle!\n
         Press ENTER to toggle triangulation vis!\n
         Drag and Drop points
