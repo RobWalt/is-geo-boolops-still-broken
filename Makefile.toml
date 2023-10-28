@@ -28,11 +28,7 @@ dependencies = ["cargo-build-wasm", "create-release-dir"]
 command = "cp"
 args = ["./wasm/index.html", "./wasm/release"]
 
-# copy over the assets
-[tasks.copy-assets]
-script = "cp -rf assets ./wasm/release"
-
 # zip everything as flat as possible (don't zip it inside of a folder but rather directly)
 [tasks.create-release-zip]
 script = "cd ./wasm/release && zip -r game.zip ./*"
-dependencies = ["wasm-bindgen-bundle", "copy-assets", "copy-index-html"]
+dependencies = ["wasm-bindgen-bundle", "copy-index-html"]
